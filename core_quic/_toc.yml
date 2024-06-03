@@ -5,7 +5,7 @@ format: jb-book
 root: intro
 chapters:
 - file: usecase
-- file: graphs
+- file: networking24
 # chapters:
 # - file: markdown
 # - file: notebooks
