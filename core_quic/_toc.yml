@@ -3,6 +3,9 @@
 
 format: jb-book
 root: intro
+chapters:
+- file: usecase
+- file: graphs
 # chapters:
 # - file: markdown
 # - file: notebooks
