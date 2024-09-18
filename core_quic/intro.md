@@ -1,10 +1,12 @@
 # Core QUIC
 
 ```{warning}
-This website is still under construction, and will be finalized by June 10th, 2024.
+This website is still under construction.
 ```
 
 Core QUIC is a research effort aiming at defining a common layer across compliant QUIC implementations, enabling them to be extended by a same plugin.
+
+You can find our initial IFIP Networking 2024 publication [here](10.23919/IFIPNetworking62109.2024.10619827), or our related technical report [here](https://doi.org/10.48550/arXiv.2405.01279).
 
 ## Get Rid of the Internet Protocol Innovation Inertia
 
@@ -32,9 +34,51 @@ This library is designed such that the code base modifications to the original Q
 
 ## Getting Started
 
-```{warning}
-Section under construction, stay tuned!
+For this, we will focus on injecting a simple plugin sending DUMMY frames every round-trip-time in both the Core QUIC-compliant `quiche` and `quinn` implementations.
+We will run the experiments on localhost, using the `quinn` implementation as the server and the `quiche` one as the client.
+
+Before starting, ensure that Rust is installed on your machine.
+You can do this by following [this link](https://www.rust-lang.org/learn/get-started).
+
+We can first get the plugin examples repository by cloning the following repository.
+```bash
+git clone https://github.com/core-quic/core-quic-plugins.git
 ```
+The plugin is called `super_frame` for historical reason (this is a dummy frame called SUPER, but fundamentally besides adding a new frame, it does not change anything in the protocol behavior).
+For convenience, a compiled Wasm plugin is already available under the `super_frame/super_frame.wasm` path.
+If you want to modify it or regenerate the plugin binary, you can also compile it using the following script in the root folder of the Core QUIC plugin examples.
+```bash
+./generate_wasms.sh super_frame
+```
+
+Let us now setup the `quinn` server.
+For this, we can fetch the source code, resolve the `boringssl` submodule dependency and run the server.
+```bash
+git clone https://github.com/core-quic/quinn.git
+cd quinn
+RUST_LOG=trace cargo run --release --example server ./ --plugin /absolute/path/to/core-quic-plugins/super-frame/super_frame.wasm
+```
+
+```{note}
+Always run the server first before executing the client.
+```
+
+Now, let us prepare the `quiche` client.
+**In another terminal**, we can fetch the source code and execute one line that will compile and run the whole.
+```bash
+git clone https://github.com/core-quic/core-quic.git
+cd core-quic
+RUST_LOG=trace cargo run --release --bin quiche-client -- --plugin /absolute/path/to/core-quic-plugins/super-frame/super_frame.wasm --no-verify "https://[::1]:4433/Cargo.toml"
+```
+
+You should now see occurrences in the logs of `SUPER frame sent` and `Successfully processed SUPER frame` in both terminals, and the traces can also show occurrences of `tx frm EXTENSION ty=42 tag=x` or `quinn_proto::connection: got frame Extension { frame_type: 66, tag: x }`.
+Congratulations, you just ran your first plugin-enabled connection!
+
+```{warning}
+Further examples will be provided, stay tuned!
+```
+
+## Relevant Resources
 
 The [`pluginop` library](https://crates.io/crates/pluginop), as well as the [plugin-side `plugin-wasm` one](https://crates.io/crates/pluginop-wasm) are available on crates.io.
 
